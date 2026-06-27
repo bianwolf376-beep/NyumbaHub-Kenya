@@ -1,0 +1,210 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+  ADMIN
+  LANDLORD
+  TENANT
+}
+
+enum PropertyType {
+  APARTMENT
+  BEDSITTER
+  STUDIO
+  SINGLE_ROOM
+  MAISONETTE
+  BUNGALOW
+  VILLA
+  HOSTEL
+  COMMERCIAL
+}
+
+enum PropertyStatus {
+  AVAILABLE
+  PENDING
+  RENTED
+  HIDDEN
+}
+
+enum VisitStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  COMPLETED
+}
+
+model User {
+  id       String @id @default(uuid())
+  fullName String
+  email    String @unique
+  phone    String @unique
+  password String
+
+  role UserRole @default(TENANT)
+
+  profilePhoto String?
+
+  verified Boolean @default(false)
+  active   Boolean @default(true)
+
+  properties       Property[]
+  favorites        Favorite[]
+  reviews          Review[]
+  sentMessages     Message[]      @relation("Sender")
+  receivedMessages Message[]      @relation("Receiver")
+  visitRequests    VisitRequest[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Property {
+  id String @id @default(uuid())
+
+  landlordId String
+  landlord   User   @relation(fields: [landlordId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String
+
+  county  String
+  town    String
+  estate  String
+  address String?
+
+  propertyType PropertyType
+
+  bedrooms  Int
+  bathrooms Int
+
+  rent    Decimal @db.Decimal(12, 2)
+  deposit Decimal @db.Decimal(12, 2)
+
+  parking   Boolean @default(false)
+  furnished Boolean @default(false)
+
+  wifi            Boolean @default(false)
+  cctv            Boolean @default(false)
+  balcony         Boolean @default(false)
+  security        Boolean @default(false)
+  borehole        Boolean @default(false)
+  swimmingPool    Boolean @default(false)
+  lift            Boolean @default(false)
+  petsAllowed     Boolean @default(false)
+  backupGenerator Boolean @default(false)
+
+  status PropertyStatus @default(AVAILABLE)
+
+  verified Boolean @default(false)
+
+  views Int @default(0)
+
+  images    PropertyImage[]
+  favorites Favorite[]
+  reviews   Review[]
+  visits    VisitRequest[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  Message   Message[]
+
+  @@index([county])
+  @@index([town])
+  @@index([estate])
+  @@index([rent])
+  @@index([status])
+  @@index([propertyType])
+}
+
+model PropertyImage {
+  id String @id @default(uuid())
+
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  imageUrl String
+
+  createdAt DateTime @default(now())
+}
+
+model Favorite {
+  id String @id @default(uuid())
+
+  userId     String
+  propertyId String
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, propertyId])
+}
+
+model Review {
+  id String @id @default(uuid())
+
+  rating Int
+
+  comment String
+
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([propertyId])
+}
+
+model Message {
+  id String @id @default(uuid())
+
+  senderId   String
+  receiverId String
+
+  sender   User @relation("Sender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("Receiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  propertyId String?
+  property   Property? @relation(fields: [propertyId], references: [id])
+
+  message String
+
+  isRead Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([senderId])
+  @@index([receiverId])
+}
+
+model VisitRequest {
+  id String @id @default(uuid())
+
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  visitDate DateTime
+
+  status VisitStatus @default(PENDING)
+
+  notes String?
+
+  createdAt DateTime @default(now())
+
+  @@index([propertyId])
+  @@index([userId])
+}
