@@ -1,6 +1,16 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Inter } from "next/font/google";
+
 import "./globals.css";
+import { cn } from "@/lib/utils";
+
+import { ThemeProvider } from "../components/providers/ThemeProvider";
+import { Toaster } from "sonner";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,8 +23,20 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NyumbaHub Kenya",
-  description: "Kenya's trusted property marketplace",
+  title: {
+    default: "NyumbaHub Kenya",
+    template: "%s | NyumbaHub Kenya",
+  },
+  description:
+    "Find houses, apartments and rental homes across Kenya with the help of AI.",
+  keywords: [
+    "Kenya Houses",
+    "Apartments",
+    "NyumbaHub",
+    "Rent",
+    "Real Estate",
+    "AI Property Search",
+  ],
 };
 
 export default function RootLayout({
@@ -25,9 +47,22 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
+      className={cn(
+        "h-full",
+        "antialiased",
+        geistSans.variable,
+        geistMono.variable,
+        inter.variable,
+        "font-sans"
+      )}
     >
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-screen bg-background text-foreground">
+        <ThemeProvider>
+          {children}
+          <Toaster richColors position="top-right" />
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

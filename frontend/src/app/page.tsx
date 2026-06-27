@@ -1,10 +1,19 @@
-export default function Home() {
+import Navbar from "@/components/layout/Navbar";
+
+export default function HomePage() {
   return (
-    <main className="flex flex-1 flex-col items-center justify-center p-8">
-      <h1 className="text-4xl font-bold tracking-tight">NyumbaHub Kenya</h1>
-      <p className="mt-4 text-muted-foreground">
-        Property marketplace — setup complete.
-      </p>
-    </main>
+    <>
+      <Navbar />
+
+      <main className="mx-auto max-w-7xl px-6 py-20">
+        <h1 className="text-5xl font-bold">
+          Welcome to NyumbaHub
+        </h1>
+
+        <p className="mt-6 text-lg text-muted-foreground">
+          Kenya's AI-powered property marketplace.
+        </p>
+      </main>
+    </>
   );
 }
