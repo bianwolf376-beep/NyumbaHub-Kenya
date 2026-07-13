@@ -1,15 +1,29 @@
-import { ValidationPipe } from "@nestjs/common";
-import { NestFactory } from "@nestjs/core";
-import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
+import { ValidationPipe } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import helmet from 'helmet';
 
-import { AppModule } from "./app.module";
-import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter";
+import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.setGlobalPrefix("api");
+  // Security middleware
+  app.use(helmet());
 
+  // API prefix
+  app.setGlobalPrefix('api');
+
+  // CORS
+  app.enableCors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
+
+  // Global validation pipe
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -21,28 +35,32 @@ async function bootstrap() {
     }),
   );
 
+  // Global exception filter
   app.useGlobalFilters(new AllExceptionsFilter());
 
-  app.enableCors({
-    origin: true,
-    credentials: true,
-  });
-
+  // Swagger documentation
   const config = new DocumentBuilder()
-    .setTitle("NyumbaHub Kenya API")
-    .setDescription("Backend API for NyumbaHub Kenya")
-    .setVersion("1.0")
+    .setTitle('NyumbaHub Kenya API')
+    .setDescription('Backend API for NyumbaHub Kenya - Property Marketplace')
+    .setVersion('1.0.0')
     .addBearerAuth()
+    .addTag('Auth', 'Authentication endpoints')
+    .addTag('Properties', 'Property management endpoints')
+    .addTag('Favorites', 'Favorites management endpoints')
+    .addTag('Reviews', 'Reviews and ratings endpoints')
+    .addTag('Messages', 'Messaging endpoints')
+    .addTag('Visits', 'Visit requests endpoints')
+    .addTag('Profile', 'User profile endpoints')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('docs', app, document);
 
-  SwaggerModule.setup("docs", app, document);
+  const port = process.env.PORT || 3001;
+  await app.listen(port);
 
-  await app.listen(3001);
-
-  console.log("🚀 Backend running on http://localhost:3001/api");
-  console.log("📚 Swagger Docs: http://localhost:3001/docs");
+  console.log(`\n🚀 Backend running on http://localhost:${port}/api`);
+  console.log(`📚 Swagger Docs: http://localhost:${port}/docs\n`);
 }
 
 bootstrap();
