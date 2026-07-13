@@ -1,94 +1,106 @@
-import {
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
-
-import { PrismaService } from "../prisma/prisma.service";
-import { VisitStatus } from "@prisma/client";
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateVisitDto } from './dto/create-visit.dto';
+import { UpdateVisitStatusDto } from './dto/update-visit-status.dto';
 
 @Injectable()
 export class VisitsService {
-  constructor(
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  async create(
-    userId: string,
-    propertyId: string,
-    visitDate: Date,
-    notes?: string,
-  ) {
+  async requestVisit(userId: string, dto: CreateVisitDto) {
     const property = await this.prisma.property.findUnique({
-      where: { id: propertyId },
+      where: { id: dto.propertyId },
     });
 
     if (!property) {
-      throw new NotFoundException("Property not found");
+      throw new NotFoundException('Property not found');
+    }
+
+    const visitDate = new Date(dto.visitDate);
+    if (visitDate < new Date()) {
+      throw new BadRequestException('Visit date must be in the future');
     }
 
     return this.prisma.visitRequest.create({
       data: {
         userId,
-        propertyId,
+        propertyId: dto.propertyId,
         visitDate,
-        notes,
+        notes: dto.notes,
       },
       include: {
-        property: true,
         user: true,
+        property: {
+          include: {
+            landlord: true,
+            images: true,
+          },
+        },
       },
     });
   }
 
-  async myVisits(userId: string) {
+  async getPropertyVisits(propertyId: string) {
+    return this.prisma.visitRequest.findMany({
+      where: { propertyId },
+      include: {
+        user: true,
+        property: true,
+      },
+      orderBy: { visitDate: 'asc' },
+    });
+  }
+
+  async getUserVisits(userId: string) {
     return this.prisma.visitRequest.findMany({
       where: { userId },
       include: {
         property: {
           include: {
-            images: true,
             landlord: true,
+            images: true,
           },
         },
       },
-      orderBy: {
-        visitDate: "asc",
-      },
+      orderBy: { visitDate: 'asc' },
     });
   }
 
-  async landlordVisits(landlordId: string) {
-    return this.prisma.visitRequest.findMany({
-      where: {
-        property: {
-          landlordId,
-        },
-      },
+  async updateVisitStatus(visitId: string, landlordId: string, dto: UpdateVisitStatusDto) {
+    const visit = await this.prisma.visitRequest.findUnique({
+      where: { id: visitId },
+      include: { property: true },
+    });
+
+    if (!visit) {
+      throw new NotFoundException('Visit request not found');
+    }
+
+    if (visit.property.landlordId !== landlordId) {
+      throw new BadRequestException('Unauthorized to update this visit');
+    }
+
+    return this.prisma.visitRequest.update({
+      where: { id: visitId },
+      data: { status: dto.status },
       include: {
-        property: true,
         user: true,
-      },
-      orderBy: {
-        createdAt: "desc",
+        property: true,
       },
     });
   }
 
-  async approve(id: string) {
-    return this.prisma.visitRequest.update({
-      where: { id },
-      data: {
-        status: VisitStatus.APPROVED,
-      },
+  async cancelVisit(visitId: string, userId: string) {
+    const visit = await this.prisma.visitRequest.findUnique({
+      where: { id: visitId },
     });
-  }
 
-  async decline(id: string) {
-    return this.prisma.visitRequest.update({
-      where: { id },
-      data: {
-        status: VisitStatus.DECLINED,
-      },
+    if (!visit || visit.userId !== userId) {
+      throw new NotFoundException('Visit request not found');
+    }
+
+    return this.prisma.visitRequest.delete({
+      where: { id: visitId },
     });
   }
 }

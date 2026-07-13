@@ -1,68 +1,50 @@
 import {
-  Body,
   Controller,
-  Get,
-  Param,
-  Patch,
   Post,
+  Get,
+  Patch,
+  Delete,
+  Param,
+  Body,
   UseGuards,
-} from "@nestjs/common";
+} from '@nestjs/common';
+import { VisitsService } from './visits.service';
+import { CreateVisitDto } from './dto/create-visit.dto';
+import { UpdateVisitStatusDto } from './dto/update-visit-status.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
-import { VisitsService } from "./visits.service";
-
-import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
-import { CurrentUser } from "../auth/decorators/current-user.decorator";
-
-@Controller("visits")
+@Controller('visits')
 @UseGuards(JwtAuthGuard)
 export class VisitsController {
-  constructor(
-    private readonly visitsService: VisitsService,
-  ) {}
+  constructor(private readonly visitsService: VisitsService) {}
 
   @Post()
-  create(
+  requestVisit(@CurrentUser() user: any, @Body() dto: CreateVisitDto) {
+    return this.visitsService.requestVisit(user.id, dto);
+  }
+
+  @Get('property/:propertyId')
+  getPropertyVisits(@Param('propertyId') propertyId: string) {
+    return this.visitsService.getPropertyVisits(propertyId);
+  }
+
+  @Get('user/my-visits')
+  getUserVisits(@CurrentUser() user: any) {
+    return this.visitsService.getUserVisits(user.id);
+  }
+
+  @Patch(':visitId/status')
+  updateVisitStatus(
     @CurrentUser() user: any,
-    @Body()
-    body: {
-      propertyId: string;
-      visitDate: string;
-      notes?: string;
-    },
+    @Param('visitId') visitId: string,
+    @Body() dto: UpdateVisitStatusDto,
   ) {
-    return this.visitsService.create(
-      user.id,
-      body.propertyId,
-      new Date(body.visitDate),
-      body.notes,
-    );
+    return this.visitsService.updateVisitStatus(visitId, user.id, dto);
   }
 
-  @Get("me")
-  myVisits(
-    @CurrentUser() user: any,
-  ) {
-    return this.visitsService.myVisits(user.id);
-  }
-
-  @Get("landlord")
-  landlordVisits(
-    @CurrentUser() user: any,
-  ) {
-    return this.visitsService.landlordVisits(user.id);
-  }
-
-  @Patch(":id/approve")
-  approve(
-    @Param("id") id: string,
-  ) {
-    return this.visitsService.approve(id);
-  }
-
-  @Patch(":id/decline")
-  decline(
-    @Param("id") id: string,
-  ) {
-    return this.visitsService.decline(id);
+  @Delete(':visitId')
+  cancelVisit(@CurrentUser() user: any, @Param('visitId') visitId: string) {
+    return this.visitsService.cancelVisit(visitId, user.id);
   }
 }

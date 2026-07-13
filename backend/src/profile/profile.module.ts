@@ -1,18 +1,11 @@
-import { Module } from "@nestjs/common";
-
-import { ProfileController } from "./profile.controller";
-import { ProfileService } from "./profile.service";
-
-import { PrismaService } from "../prisma/prisma.service";
-import { SupabaseModule } from "../supabase/supabase.module";
+import { Module } from '@nestjs/common';
+import { ProfileService } from './profile.service';
+import { ProfileController } from './profile.controller';
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-  imports: [SupabaseModule],
+  imports: [PrismaModule],
+  providers: [ProfileService],
   controllers: [ProfileController],
-  providers: [
-    ProfileService,
-    PrismaService,
-  ],
-  exports: [ProfileService],
 })
 export class ProfileModule {}
