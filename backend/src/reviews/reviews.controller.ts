@@ -1,61 +1,32 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Post,
-  UseGuards,
-} from "@nestjs/common";
+import { Controller, Post, Get, Delete, Param, Body, UseGuards } from '@nestjs/common';
+import { ReviewsService } from './reviews.service';
+import { CreateReviewDto } from './dto/create-review.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
-import { ReviewsService } from "./reviews.service";
-
-import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
-import { CurrentUser } from "../auth/decorators/current-user.decorator";
-
-@Controller("reviews")
+@Controller('reviews')
 export class ReviewsController {
-  constructor(
-    private readonly reviewsService: ReviewsService,
-  ) {}
+  constructor(private readonly reviewsService: ReviewsService) {}
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  create(
-    @CurrentUser() user: any,
-    @Body()
-    body: {
-      propertyId: string;
-      rating: number;
-      comment: string;
-    },
-  ) {
-    return this.reviewsService.create(
-      user.id,
-      body.propertyId,
-      body.rating,
-      body.comment,
-    );
+  createReview(@CurrentUser() user: any, @Body() dto: CreateReviewDto) {
+    return this.reviewsService.createReview(user.id, dto);
   }
 
-  @Get(":propertyId")
-  getPropertyReviews(
-    @Param("propertyId") propertyId: string,
-  ) {
-    return this.reviewsService.getPropertyReviews(
-      propertyId,
-    );
+  @Get('property/:propertyId')
+  getPropertyReviews(@Param('propertyId') propertyId: string) {
+    return this.reviewsService.getPropertyReviews(propertyId);
   }
 
-  @Delete(":reviewId")
+  @Get('property/:propertyId/average')
+  getAverageRating(@Param('propertyId') propertyId: string) {
+    return this.reviewsService.getAverageRating(propertyId);
+  }
+
+  @Delete(':reviewId')
   @UseGuards(JwtAuthGuard)
-  remove(
-    @CurrentUser() user: any,
-    @Param("reviewId") reviewId: string,
-  ) {
-    return this.reviewsService.remove(
-      reviewId,
-      user.id,
-    );
+  deleteReview(@CurrentUser() user: any, @Param('reviewId') reviewId: string) {
+    return this.reviewsService.deleteReview(reviewId, user.id);
   }
 }

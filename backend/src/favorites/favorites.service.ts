@@ -1,68 +1,50 @@
-import {
-  Injectable,
-  BadRequestException,
-} from "@nestjs/common";
-
-import { PrismaService } from "../prisma/prisma.service";
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { AddFavoriteDto } from './dto/add-favorite.dto';
 
 @Injectable()
 export class FavoritesService {
-  constructor(
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  async add(userId: string, propertyId: string) {
-    const exists = await this.prisma.favorite.findUnique({
+  async addFavorite(userId: string, dto: AddFavoriteDto) {
+    const property = await this.prisma.property.findUnique({
+      where: { id: dto.propertyId },
+    });
+
+    if (!property) {
+      throw new NotFoundException('Property not found');
+    }
+
+    const existingFavorite = await this.prisma.favorite.findUnique({
       where: {
         userId_propertyId: {
           userId,
-          propertyId,
+          propertyId: dto.propertyId,
         },
       },
     });
 
-    if (exists) {
-      throw new BadRequestException(
-        "Property already added to favorites.",
-      );
+    if (existingFavorite) {
+      return this.removeFavorite(userId, dto.propertyId);
     }
 
     return this.prisma.favorite.create({
       data: {
         userId,
-        propertyId,
+        propertyId: dto.propertyId,
       },
       include: {
         property: {
           include: {
-            images: true,
             landlord: true,
+            images: true,
           },
         },
       },
     });
   }
 
-  async getUserFavorites(userId: string) {
-    return this.prisma.favorite.findMany({
-      where: {
-        userId,
-      },
-      include: {
-        property: {
-          include: {
-            images: true,
-            landlord: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-  }
-
-  async remove(userId: string, propertyId: string) {
+  async removeFavorite(userId: string, propertyId: string) {
     return this.prisma.favorite.delete({
       where: {
         userId_propertyId: {
@@ -71,5 +53,34 @@ export class FavoritesService {
         },
       },
     });
+  }
+
+  async getFavorites(userId: string) {
+    return this.prisma.favorite.findMany({
+      where: { userId },
+      include: {
+        property: {
+          include: {
+            landlord: true,
+            images: true,
+            reviews: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async isFavorite(userId: string, propertyId: string) {
+    const favorite = await this.prisma.favorite.findUnique({
+      where: {
+        userId_propertyId: {
+          userId,
+          propertyId,
+        },
+      },
+    });
+
+    return !!favorite;
   }
 }

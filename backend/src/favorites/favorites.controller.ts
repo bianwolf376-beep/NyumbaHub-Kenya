@@ -1,52 +1,31 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Delete,
-  Param,
-  UseGuards,
-} from "@nestjs/common";
+import { Controller, Post, Get, Delete, Param, Body, UseGuards } from '@nestjs/common';
+import { FavoritesService } from './favorites.service';
+import { AddFavoriteDto } from './dto/add-favorite.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
-import { FavoritesService } from "./favorites.service";
-
-import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
-import { CurrentUser } from "../auth/decorators/current-user.decorator";
-
-@Controller("favorites")
+@Controller('favorites')
 @UseGuards(JwtAuthGuard)
 export class FavoritesController {
-  constructor(
-    private readonly favoritesService: FavoritesService,
-  ) {}
+  constructor(private readonly favoritesService: FavoritesService) {}
 
-  @Post(":propertyId")
-  addFavorite(
-    @CurrentUser() user: any,
-    @Param("propertyId") propertyId: string,
-  ) {
-    return this.favoritesService.add(
-      user.id,
-      propertyId,
-    );
+  @Post()
+  addFavorite(@CurrentUser() user: any, @Body() dto: AddFavoriteDto) {
+    return this.favoritesService.addFavorite(user.id, dto);
   }
 
   @Get()
-  getMyFavorites(
-    @CurrentUser() user: any,
-  ) {
-    return this.favoritesService.getUserFavorites(
-      user.id,
-    );
+  getFavorites(@CurrentUser() user: any) {
+    return this.favoritesService.getFavorites(user.id);
   }
 
-  @Delete(":propertyId")
-  removeFavorite(
-    @CurrentUser() user: any,
-    @Param("propertyId") propertyId: string,
-  ) {
-    return this.favoritesService.remove(
-      user.id,
-      propertyId,
-    );
+  @Get('is-favorite/:propertyId')
+  isFavorite(@CurrentUser() user: any, @Param('propertyId') propertyId: string) {
+    return this.favoritesService.isFavorite(user.id, propertyId);
+  }
+
+  @Delete(':propertyId')
+  removeFavorite(@CurrentUser() user: any, @Param('propertyId') propertyId: string) {
+    return this.favoritesService.removeFavorite(user.id, propertyId);
   }
 }
