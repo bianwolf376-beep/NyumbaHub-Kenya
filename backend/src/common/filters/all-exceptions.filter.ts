@@ -1,48 +1,43 @@
 import {
-    ArgumentsHost,
-    Catch,
-    ExceptionFilter,
-    HttpException,
-    HttpStatus,
-  } from "@nestjs/common";
-  
-  @Catch()
-  export class AllExceptionsFilter implements ExceptionFilter {
-    catch(exception: unknown, host: ArgumentsHost) {
-      const ctx = host.switchToHttp();
-  
-      const response = ctx.getResponse();
-      const request = ctx.getRequest();
-  
-      const status =
-        exception instanceof HttpException
-          ? exception.getStatus()
-          : HttpStatus.INTERNAL_SERVER_ERROR;
-  
-      let message = "Internal server error";
-  
-      if (exception instanceof HttpException) {
-        const error = exception.getResponse();
-  
-        if (typeof error === "string") {
-          message = error;
-        } else if (
-          typeof error === "object" &&
-          error !== null &&
-          "message" in error
-        ) {
-          message = Array.isArray((error as any).message)
-            ? (error as any).message.join(", ")
-            : (error as any).message;
-        }
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
+import { Response } from 'express';
+
+@Catch()
+export class AllExceptionsFilter implements ExceptionFilter {
+  catch(exception: unknown, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest<Request>();
+
+    let status = HttpStatus.INTERNAL_SERVER_ERROR;
+    let message = 'Internal server error';
+    let error: any = {};
+
+    if (exception instanceof HttpException) {
+      status = exception.getStatus();
+      const exceptionResponse = exception.getResponse();
+
+      if (typeof exceptionResponse === 'object') {
+        error = exceptionResponse;
+        message = (exceptionResponse as any).message || message;
+      } else {
+        message = exceptionResponse as string;
       }
-  
-      response.status(status).json({
-        success: false,
-        statusCode: status,
-        timestamp: new Date().toISOString(),
-        path: request.url,
-        message,
-      });
+    } else if (exception instanceof Error) {
+      message = exception.message;
     }
+
+    response.status(status).json({
+      statusCode: status,
+      message,
+      timestamp: new Date().toISOString(),
+      path: request.url,
+      ...error,
+    });
   }
+}
