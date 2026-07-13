@@ -6,14 +6,20 @@ import {
   Patch,
   Post,
   UseGuards,
-} from "@nestjs/common";
+} from '@nestjs/common';
 
-import { VisitsService } from "./visits.service";
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
-import { CurrentUser } from "../auth/decorators/current-user.decorator";
+import { VisitsService } from './visits.service';
 
-@Controller("visits")
+interface JwtUser {
+  id: string;
+  email: string;
+  role: string;
+}
+
+@Controller('visits')
 @UseGuards(JwtAuthGuard)
 export class VisitsController {
   constructor(
@@ -21,8 +27,8 @@ export class VisitsController {
   ) {}
 
   @Post()
-  create(
-    @CurrentUser() user: any,
+  async create(
+    @CurrentUser() user: JwtUser,
     @Body()
     body: {
       propertyId: string;
@@ -30,7 +36,7 @@ export class VisitsController {
       notes?: string;
     },
   ) {
-    return this.visitsService.create(
+    return await this.visitsService.create(
       user.id,
       body.propertyId,
       new Date(body.visitDate),
@@ -38,31 +44,33 @@ export class VisitsController {
     );
   }
 
-  @Get("me")
-  myVisits(
-    @CurrentUser() user: any,
+  @Get('me')
+  async myVisits(
+    @CurrentUser() user: JwtUser,
   ) {
-    return this.visitsService.myVisits(user.id);
+    return await this.visitsService.myVisits(user.id);
   }
 
-  @Get("landlord")
-  landlordVisits(
-    @CurrentUser() user: any,
+  @Get('landlord')
+  async landlordVisits(
+    @CurrentUser() user: JwtUser,
   ) {
-    return this.visitsService.landlordVisits(user.id);
+    return await this.visitsService.landlordVisits(
+      user.id,
+    );
   }
 
-  @Patch(":id/approve")
-  approve(
-    @Param("id") id: string,
+  @Patch(':id/approve')
+  async approve(
+    @Param('id') id: string,
   ) {
-    return this.visitsService.approve(id);
+    return await this.visitsService.approve(id);
   }
 
-  @Patch(":id/decline")
-  decline(
-    @Param("id") id: string,
+  @Patch(':id/decline')
+  async decline(
+    @Param('id') id: string,
   ) {
-    return this.visitsService.decline(id);
+    return await this.visitsService.decline(id);
   }
 }

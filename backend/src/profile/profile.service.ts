@@ -1,12 +1,12 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
-  BadRequestException,
-} from "@nestjs/common";
-import * as bcrypt from "bcrypt";
+} from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 
-import { PrismaService } from "../prisma/prisma.service";
-import { SupabaseService } from "../supabase/supabase.service";
+import { PrismaService } from '../prisma/prisma.service';
+import { SupabaseService } from '../supabase/supabase.service';
 
 @Injectable()
 export class ProfileService {
@@ -17,12 +17,16 @@ export class ProfileService {
 
   async getProfile(userId: string) {
     const user = await this.prisma.user.findUnique({
-      where: { id: userId },
+      where: {
+        id: userId,
+      },
       select: {
         id: true,
         fullName: true,
         email: true,
         phone: true,
+        county: true,
+        town: true,
         role: true,
         profilePhoto: true,
         verified: true,
@@ -32,7 +36,7 @@ export class ProfileService {
     });
 
     if (!user) {
-      throw new NotFoundException("User not found");
+      throw new NotFoundException('User not found');
     }
 
     return user;
@@ -45,10 +49,30 @@ export class ProfileService {
       phone?: string;
     },
   ) {
-    return this.prisma.user.update({
-      where: { id: userId },
-      data,
+    const updatedUser = await this.prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        fullName: data.fullName?.trim(),
+        phone: data.phone?.trim(),
+      },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        phone: true,
+        county: true,
+        town: true,
+        role: true,
+        profilePhoto: true,
+        verified: true,
+        active: true,
+        createdAt: true,
+      },
     });
+
+    return updatedUser;
   }
 
   async uploadProfilePhoto(
@@ -56,22 +80,34 @@ export class ProfileService {
     file: Express.Multer.File,
   ) {
     const user = await this.prisma.user.findUnique({
-      where: { id: userId },
+      where: {
+        id: userId,
+      },
     });
 
     if (!user) {
-      throw new NotFoundException("User not found");
+      throw new NotFoundException('User not found');
     }
 
-    const imageUrl = await this.supabaseService.uploadImage(
-      file,
-      "profiles",
-    );
+    const imageUrl =
+      await this.supabaseService.uploadImage(
+        file,
+        'profiles',
+      );
 
     return this.prisma.user.update({
-      where: { id: userId },
+      where: {
+        id: userId,
+      },
       data: {
         profilePhoto: imageUrl,
+      },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        profilePhoto: true,
+        verified: true,
       },
     });
   }
@@ -82,11 +118,13 @@ export class ProfileService {
     newPassword: string,
   ) {
     const user = await this.prisma.user.findUnique({
-      where: { id: userId },
+      where: {
+        id: userId,
+      },
     });
 
     if (!user) {
-      throw new NotFoundException("User not found");
+      throw new NotFoundException('User not found');
     }
 
     const valid = await bcrypt.compare(
@@ -96,7 +134,7 @@ export class ProfileService {
 
     if (!valid) {
       throw new BadRequestException(
-        "Current password is incorrect",
+        'Current password is incorrect',
       );
     }
 
@@ -106,14 +144,16 @@ export class ProfileService {
     );
 
     await this.prisma.user.update({
-      where: { id: userId },
+      where: {
+        id: userId,
+      },
       data: {
         password: hashedPassword,
       },
     });
 
     return {
-      message: "Password changed successfully",
+      message: 'Password changed successfully',
     };
   }
 }

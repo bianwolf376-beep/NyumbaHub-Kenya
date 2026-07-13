@@ -1,9 +1,9 @@
 import {
-  Injectable,
   BadRequestException,
-} from "@nestjs/common";
+  Injectable,
+} from '@nestjs/common';
 
-import { PrismaService } from "../prisma/prisma.service";
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class FavoritesService {
@@ -23,7 +23,7 @@ export class FavoritesService {
 
     if (exists) {
       throw new BadRequestException(
-        "Property already added to favorites.",
+        'Property already added to favorites.',
       );
     }
 
@@ -36,7 +36,14 @@ export class FavoritesService {
         property: {
           include: {
             images: true,
-            landlord: true,
+            landlord: {
+              select: {
+                id: true,
+                fullName: true,
+                phone: true,
+                verified: true,
+              },
+            },
           },
         },
       },
@@ -52,12 +59,19 @@ export class FavoritesService {
         property: {
           include: {
             images: true,
-            landlord: true,
+            landlord: {
+              select: {
+                id: true,
+                fullName: true,
+                phone: true,
+                verified: true,
+              },
+            },
           },
         },
       },
       orderBy: {
-        createdAt: "desc",
+        createdAt: 'desc',
       },
     });
   }

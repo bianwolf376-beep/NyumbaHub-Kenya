@@ -3,14 +3,20 @@ import {
   Get,
   Patch,
   UseGuards,
-} from "@nestjs/common";
+} from '@nestjs/common';
 
-import { NotificationsService } from "./notifications.service";
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
-import { CurrentUser } from "../auth/decorators/current-user.decorator";
+import { NotificationsService } from './notifications.service';
 
-@Controller("notifications")
+interface JwtUser {
+  id: string;
+  email: string;
+  role: string;
+}
+
+@Controller('notifications')
 @UseGuards(JwtAuthGuard)
 export class NotificationsController {
   constructor(
@@ -18,19 +24,19 @@ export class NotificationsController {
   ) {}
 
   @Get()
-  getNotifications(
-    @CurrentUser() user: any,
+  async getNotifications(
+    @CurrentUser() user: JwtUser,
   ) {
-    return this.notificationsService.getNotifications(
+    return await this.notificationsService.getNotifications(
       user.id,
     );
   }
 
-  @Patch("read")
-  markAllAsRead(
-    @CurrentUser() user: any,
+  @Patch('read')
+  async markAllAsRead(
+    @CurrentUser() user: JwtUser,
   ) {
-    return this.notificationsService.markAllAsRead(
+    return await this.notificationsService.markAllAsRead(
       user.id,
     );
   }

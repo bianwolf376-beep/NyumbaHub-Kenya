@@ -6,14 +6,20 @@ import {
   Param,
   Post,
   UseGuards,
-} from "@nestjs/common";
+} from '@nestjs/common';
 
-import { ReviewsService } from "./reviews.service";
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
-import { CurrentUser } from "../auth/decorators/current-user.decorator";
+import { ReviewsService } from './reviews.service';
 
-@Controller("reviews")
+interface JwtUser {
+  id: string;
+  email: string;
+  role: string;
+}
+
+@Controller('reviews')
 export class ReviewsController {
   constructor(
     private readonly reviewsService: ReviewsService,
@@ -21,8 +27,8 @@ export class ReviewsController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  create(
-    @CurrentUser() user: any,
+  async create(
+    @CurrentUser() user: JwtUser,
     @Body()
     body: {
       propertyId: string;
@@ -30,7 +36,7 @@ export class ReviewsController {
       comment: string;
     },
   ) {
-    return this.reviewsService.create(
+    return await this.reviewsService.create(
       user.id,
       body.propertyId,
       body.rating,
@@ -38,22 +44,22 @@ export class ReviewsController {
     );
   }
 
-  @Get(":propertyId")
-  getPropertyReviews(
-    @Param("propertyId") propertyId: string,
+  @Get(':propertyId')
+  async getPropertyReviews(
+    @Param('propertyId') propertyId: string,
   ) {
-    return this.reviewsService.getPropertyReviews(
+    return await this.reviewsService.getPropertyReviews(
       propertyId,
     );
   }
 
-  @Delete(":reviewId")
+  @Delete(':reviewId')
   @UseGuards(JwtAuthGuard)
-  remove(
-    @CurrentUser() user: any,
-    @Param("reviewId") reviewId: string,
+  async remove(
+    @CurrentUser() user: JwtUser,
+    @Param('reviewId') reviewId: string,
   ) {
-    return this.reviewsService.remove(
+    return await this.reviewsService.remove(
       reviewId,
       user.id,
     );

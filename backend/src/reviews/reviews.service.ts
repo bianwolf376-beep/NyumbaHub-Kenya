@@ -1,9 +1,9 @@
 import {
-  Injectable,
   BadRequestException,
-} from "@nestjs/common";
+  Injectable,
+} from '@nestjs/common';
 
-import { PrismaService } from "../prisma/prisma.service";
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class ReviewsService {
@@ -17,12 +17,22 @@ export class ReviewsService {
     rating: number,
     comment: string,
   ) {
+    if (rating < 1 || rating > 5) {
+      throw new BadRequestException(
+        'Rating must be between 1 and 5.',
+      );
+    }
+
     const property = await this.prisma.property.findUnique({
-      where: { id: propertyId },
+      where: {
+        id: propertyId,
+      },
     });
 
     if (!property) {
-      throw new BadRequestException("Property not found.");
+      throw new BadRequestException(
+        'Property not found.',
+      );
     }
 
     const existing = await this.prisma.review.findFirst({
@@ -34,7 +44,7 @@ export class ReviewsService {
 
     if (existing) {
       throw new BadRequestException(
-        "You have already reviewed this property.",
+        'You have already reviewed this property.',
       );
     }
 
@@ -43,11 +53,24 @@ export class ReviewsService {
         userId,
         propertyId,
         rating,
-        comment,
+        comment: comment.trim(),
       },
       include: {
-        user: true,
-        property: true,
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            profilePhoto: true,
+            verified: true,
+          },
+        },
+        property: {
+          select: {
+            id: true,
+            title: true,
+            rent: true,
+          },
+        },
       },
     });
   }
@@ -58,15 +81,25 @@ export class ReviewsService {
         propertyId,
       },
       include: {
-        user: true,
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            profilePhoto: true,
+            verified: true,
+          },
+        },
       },
       orderBy: {
-        createdAt: "desc",
+        createdAt: 'desc',
       },
     });
   }
 
-  async remove(reviewId: string, userId: string) {
+  async remove(
+    reviewId: string,
+    userId: string,
+  ) {
     return this.prisma.review.deleteMany({
       where: {
         id: reviewId,

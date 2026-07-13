@@ -1,9 +1,9 @@
 import {
   Injectable,
   NotFoundException,
-} from "@nestjs/common";
+} from '@nestjs/common';
 
-import { PrismaService } from "../prisma/prisma.service";
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class MessagesService {
@@ -24,7 +24,7 @@ export class MessagesService {
     });
 
     if (!receiver) {
-      throw new NotFoundException("Receiver not found");
+      throw new NotFoundException('Receiver not found');
     }
 
     return this.prisma.message.create({
@@ -35,9 +35,27 @@ export class MessagesService {
         message,
       },
       include: {
-        sender: true,
-        receiver: true,
-        property: true,
+        sender: {
+          select: {
+            id: true,
+            fullName: true,
+            profilePhoto: true,
+            verified: true,
+          },
+        },
+        receiver: {
+          select: {
+            id: true,
+            fullName: true,
+            profilePhoto: true,
+            verified: true,
+          },
+        },
+        property: {
+          include: {
+            images: true,
+          },
+        },
       },
     });
   }
@@ -46,13 +64,31 @@ export class MessagesService {
     return this.prisma.message.findMany({
       where: {
         OR: [
-          { senderId: userId },
-          { receiverId: userId },
+          {
+            senderId: userId,
+          },
+          {
+            receiverId: userId,
+          },
         ],
       },
       include: {
-        sender: true,
-        receiver: true,
+        sender: {
+          select: {
+            id: true,
+            fullName: true,
+            profilePhoto: true,
+            verified: true,
+          },
+        },
+        receiver: {
+          select: {
+            id: true,
+            fullName: true,
+            profilePhoto: true,
+            verified: true,
+          },
+        },
         property: {
           include: {
             images: true,
@@ -60,7 +96,7 @@ export class MessagesService {
         },
       },
       orderBy: {
-        createdAt: "desc",
+        createdAt: 'desc',
       },
     });
   }
@@ -83,12 +119,30 @@ export class MessagesService {
         ],
       },
       include: {
-        sender: true,
-        receiver: true,
-        property: true,
+        sender: {
+          select: {
+            id: true,
+            fullName: true,
+            profilePhoto: true,
+            verified: true,
+          },
+        },
+        receiver: {
+          select: {
+            id: true,
+            fullName: true,
+            profilePhoto: true,
+            verified: true,
+          },
+        },
+        property: {
+          include: {
+            images: true,
+          },
+        },
       },
       orderBy: {
-        createdAt: "asc",
+        createdAt: 'asc',
       },
     });
   }

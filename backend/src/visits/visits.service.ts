@@ -1,10 +1,12 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
-} from "@nestjs/common";
+} from '@nestjs/common';
 
-import { PrismaService } from "../prisma/prisma.service";
-import { VisitStatus } from "@prisma/client";
+import { VisitStatus } from '@prisma/client';
+
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class VisitsService {
@@ -19,11 +21,19 @@ export class VisitsService {
     notes?: string,
   ) {
     const property = await this.prisma.property.findUnique({
-      where: { id: propertyId },
+      where: {
+        id: propertyId,
+      },
     });
 
     if (!property) {
-      throw new NotFoundException("Property not found");
+      throw new NotFoundException('Property not found');
+    }
+
+    if (visitDate.getTime() < Date.now()) {
+      throw new BadRequestException(
+        'Visit date cannot be in the past.',
+      );
     }
 
     return this.prisma.visitRequest.create({
@@ -31,28 +41,53 @@ export class VisitsService {
         userId,
         propertyId,
         visitDate,
-        notes,
+        notes: notes?.trim(),
       },
       include: {
-        property: true,
-        user: true,
+        property: {
+          select: {
+            id: true,
+            title: true,
+            county: true,
+            town: true,
+            estate: true,
+            rent: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            phone: true,
+            profilePhoto: true,
+          },
+        },
       },
     });
   }
 
   async myVisits(userId: string) {
     return this.prisma.visitRequest.findMany({
-      where: { userId },
+      where: {
+        userId,
+      },
       include: {
         property: {
           include: {
             images: true,
-            landlord: true,
+            landlord: {
+              select: {
+                id: true,
+                fullName: true,
+                phone: true,
+                verified: true,
+              },
+            },
           },
         },
       },
       orderBy: {
-        visitDate: "asc",
+        visitDate: 'asc',
       },
     });
   }
@@ -65,18 +100,32 @@ export class VisitsService {
         },
       },
       include: {
-        property: true,
-        user: true,
+        property: {
+          include: {
+            images: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            phone: true,
+            profilePhoto: true,
+            verified: true,
+          },
+        },
       },
       orderBy: {
-        createdAt: "desc",
+        createdAt: 'desc',
       },
     });
   }
 
   async approve(id: string) {
     return this.prisma.visitRequest.update({
-      where: { id },
+      where: {
+        id,
+      },
       data: {
         status: VisitStatus.APPROVED,
       },
@@ -85,7 +134,9 @@ export class VisitsService {
 
   async decline(id: string) {
     return this.prisma.visitRequest.update({
-      where: { id },
+      where: {
+        id,
+      },
       data: {
         status: VisitStatus.DECLINED,
       },

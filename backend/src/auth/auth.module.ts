@@ -1,30 +1,124 @@
 import { Module } from "@nestjs/common";
-import { JwtModule } from "@nestjs/jwt";
-import { PassportModule } from "@nestjs/passport";
 
-import { PrismaModule } from "../prisma/prisma.module";
+import {
+  ConfigModule,
+  ConfigService,
+} from "@nestjs/config";
 
-import { AuthController } from "./auth.controller";
-import { AuthService } from "./auth.service";
-import { JwtStrategy } from "./strategies/jwt.strategy";
+
+import {
+  JwtModule,
+} from "@nestjs/jwt";
+
+
+import {
+  PassportModule,
+} from "@nestjs/passport";
+
+
+import {
+  PrismaModule,
+} from "../prisma/prisma.module";
+
+
+import {
+  AuthController,
+} from "./auth.controller";
+
+
+import {
+  AuthService,
+} from "./auth.service";
+
+
+import {
+  JwtStrategy,
+} from "./strategies/jwt.strategy";
+
+
+
 
 @Module({
-  imports: [
-    PrismaModule,
-    PassportModule,
 
-    JwtModule.register({
-      secret: "NyumbaHubSecretKey2026",
+imports:[
+
+
+  ConfigModule,
+
+
+  PrismaModule,
+
+
+
+  PassportModule.register({
+
+    defaultStrategy:"jwt",
+
+  }),
+
+
+
+
+
+  JwtModule.registerAsync({
+    imports: [ConfigModule],
+  
+    inject: [ConfigService],
+  
+    useFactory: async (
+      config: ConfigService,
+    ) => ({
+      secret: config.getOrThrow<string>(
+        "JWT_SECRET",
+      ),
+  
       signOptions: {
-        expiresIn: "7d",
+        expiresIn:
+          config.get("JWT_EXPIRES_IN", "7d") as any,
       },
     }),
-  ],
+  }),
 
-  controllers: [AuthController],
 
-  providers: [AuthService, JwtStrategy],
+],
 
-  exports: [AuthService],
+
+
+
+
+controllers:[
+
+ AuthController,
+
+],
+
+
+
+
+
+providers:[
+
+ AuthService,
+
+ JwtStrategy,
+
+],
+
+
+
+
+
+exports:[
+
+ AuthService,
+
+ JwtModule,
+
+],
+
+
+
 })
+
+
 export class AuthModule {}

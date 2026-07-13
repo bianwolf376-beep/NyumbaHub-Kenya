@@ -1,19 +1,13 @@
-import Navbar from "@/components/layout/Navbar";
+import Footer from '@/features/home/Footer/Footer';
+import Hero from '@/features/home/Hero/Hero';
+import PropertyGrid from '@/features/home/PropertyGrid';
 
 export default function HomePage() {
   return (
     <>
-      <Navbar />
-
-      <main className="mx-auto max-w-7xl px-6 py-20">
-        <h1 className="text-5xl font-bold">
-          Welcome to NyumbaHub
-        </h1>
-
-        <p className="mt-6 text-lg text-muted-foreground">
-          Kenya's AI-powered property marketplace.
-        </p>
-      </main>
+      <Hero />
+      <PropertyGrid />
+      <Footer />
     </>
   );
 }

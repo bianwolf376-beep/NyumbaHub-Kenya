@@ -6,14 +6,20 @@ import {
   Patch,
   Post,
   UseGuards,
-} from "@nestjs/common";
+} from '@nestjs/common';
 
-import { MessagesService } from "./messages.service";
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
-import { CurrentUser } from "../auth/decorators/current-user.decorator";
+import { MessagesService } from './messages.service';
 
-@Controller("messages")
+interface JwtUser {
+  id: string;
+  email: string;
+  role: string;
+}
+
+@Controller('messages')
 @UseGuards(JwtAuthGuard)
 export class MessagesController {
   constructor(
@@ -21,8 +27,8 @@ export class MessagesController {
   ) {}
 
   @Post()
-  sendMessage(
-    @CurrentUser() user: any,
+  async sendMessage(
+    @CurrentUser() user: JwtUser,
     @Body()
     body: {
       receiverId: string;
@@ -30,7 +36,7 @@ export class MessagesController {
       propertyId?: string;
     },
   ) {
-    return this.messagesService.send(
+    return await this.messagesService.send(
       user.id,
       body.receiverId,
       body.message,
@@ -39,27 +45,27 @@ export class MessagesController {
   }
 
   @Get()
-  inbox(
-    @CurrentUser() user: any,
+  async inbox(
+    @CurrentUser() user: JwtUser,
   ) {
-    return this.messagesService.inbox(user.id);
+    return await this.messagesService.inbox(user.id);
   }
 
-  @Get(":userId")
-  conversation(
-    @CurrentUser() user: any,
-    @Param("userId") userId: string,
+  @Get(':userId')
+  async conversation(
+    @CurrentUser() user: JwtUser,
+    @Param('userId') userId: string,
   ) {
-    return this.messagesService.conversation(
+    return await this.messagesService.conversation(
       user.id,
       userId,
     );
   }
 
-  @Patch(":id/read")
-  markAsRead(
-    @Param("id") id: string,
+  @Patch(':id/read')
+  async markAsRead(
+    @Param('id') id: string,
   ) {
-    return this.messagesService.markAsRead(id);
+    return await this.messagesService.markAsRead(id);
   }
 }

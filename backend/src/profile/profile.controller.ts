@@ -7,15 +7,21 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
-} from "@nestjs/common";
-import { FileInterceptor } from "@nestjs/platform-express";
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 
-import { ProfileService } from "./profile.service";
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
-import { CurrentUser } from "../auth/decorators/current-user.decorator";
+import { ProfileService } from './profile.service';
 
-@Controller("profile")
+interface JwtUser {
+  id: string;
+  email: string;
+  role: string;
+}
+
+@Controller('profile')
 @UseGuards(JwtAuthGuard)
 export class ProfileController {
   constructor(
@@ -23,49 +29,49 @@ export class ProfileController {
   ) {}
 
   @Get()
-  getProfile(
-    @CurrentUser() user: any,
+  async getProfile(
+    @CurrentUser() user: JwtUser,
   ) {
-    return this.profileService.getProfile(user.id);
+    return await this.profileService.getProfile(user.id);
   }
 
   @Patch()
-  updateProfile(
-    @CurrentUser() user: any,
+  async updateProfile(
+    @CurrentUser() user: JwtUser,
     @Body()
     body: {
       fullName?: string;
       phone?: string;
     },
   ) {
-    return this.profileService.updateProfile(
+    return await this.profileService.updateProfile(
       user.id,
       body,
     );
   }
 
-  @Post("photo")
-  @UseInterceptors(FileInterceptor("file"))
-  uploadPhoto(
-    @CurrentUser() user: any,
+  @Post('photo')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadPhoto(
+    @CurrentUser() user: JwtUser,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    return this.profileService.uploadProfilePhoto(
+    return await this.profileService.uploadProfilePhoto(
       user.id,
       file,
     );
   }
 
-  @Patch("password")
-  changePassword(
-    @CurrentUser() user: any,
+  @Patch('password')
+  async changePassword(
+    @CurrentUser() user: JwtUser,
     @Body()
     body: {
       currentPassword: string;
       newPassword: string;
     },
   ) {
-    return this.profileService.changePassword(
+    return await this.profileService.changePassword(
       user.id,
       body.currentPassword,
       body.newPassword,

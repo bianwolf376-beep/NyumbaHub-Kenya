@@ -1,48 +1,110 @@
-import { ValidationPipe } from "@nestjs/common";
-import { NestFactory } from "@nestjs/core";
-import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
+import {
+  ValidationPipe,
+  VersioningType,
+} from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import {
+  DocumentBuilder,
+  SwaggerModule,
+} from '@nestjs/swagger';
 
-import { AppModule } from "./app.module";
-import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter";
+import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+  });
 
-  app.setGlobalPrefix("api");
+  // Global API Prefix
+  app.setGlobalPrefix('api');
 
+  // API Versioning
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: '1',
+  });
+
+  // Validation
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      validateCustomDecorators: true,
       transformOptions: {
         enableImplicitConversion: true,
       },
     }),
   );
 
-  app.useGlobalFilters(new AllExceptionsFilter());
+  // Global Exception Filter
+  app.useGlobalFilters(
+    new AllExceptionsFilter(),
+  );
 
+  // CORS
   app.enableCors({
-    origin: true,
+    origin: process.env.FRONTEND_URL
+      ? [process.env.FRONTEND_URL]
+      : ['http://localhost:3000'],
     credentials: true,
+    methods: [
+      'GET',
+      'POST',
+      'PUT',
+      'PATCH',
+      'DELETE',
+      'OPTIONS',
+    ],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+    ],
   });
 
+  // Graceful shutdown
+  app.enableShutdownHooks();
+
+  // Swagger
   const config = new DocumentBuilder()
-    .setTitle("NyumbaHub Kenya API")
-    .setDescription("Backend API for NyumbaHub Kenya")
-    .setVersion("1.0")
-    .addBearerAuth()
+    .setTitle('NyumbaHub Kenya API')
+    .setDescription(
+      'Backend API for NyumbaHub Kenya',
+    )
+    .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        in: 'header',
+      },
+      'access-token',
+    )
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
+  const document = SwaggerModule.createDocument(
+    app,
+    config,
+  );
 
-  SwaggerModule.setup("docs", app, document);
+  SwaggerModule.setup('docs', app, document, {
+    jsonDocumentUrl: 'docs/json',
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+  });
 
-  await app.listen(3001);
+  const port = Number(process.env.PORT) || 3001;
 
-  console.log("🚀 Backend running on http://localhost:3001/api");
-  console.log("📚 Swagger Docs: http://localhost:3001/docs");
+  await app.listen(port);
+
+  console.log('================================');
+  console.log(`🚀 Server    : http://localhost:${port}`);
+  console.log(`📡 API       : http://localhost:${port}/api`);
+  console.log(`📚 Swagger   : http://localhost:${port}/docs`);
+  console.log('================================');
 }
 
 bootstrap();

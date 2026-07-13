@@ -1,50 +1,56 @@
 import {
   Controller,
-  Get,
-  Post,
   Delete,
+  Get,
   Param,
+  Post,
   UseGuards,
-} from "@nestjs/common";
+} from '@nestjs/common';
 
-import { FavoritesService } from "./favorites.service";
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
-import { CurrentUser } from "../auth/decorators/current-user.decorator";
+import { FavoritesService } from './favorites.service';
 
-@Controller("favorites")
+interface JwtUser {
+  id: string;
+  email: string;
+  role: string;
+}
+
+@Controller('favorites')
 @UseGuards(JwtAuthGuard)
 export class FavoritesController {
   constructor(
     private readonly favoritesService: FavoritesService,
   ) {}
 
-  @Post(":propertyId")
-  addFavorite(
-    @CurrentUser() user: any,
-    @Param("propertyId") propertyId: string,
+  @Post(':propertyId')
+  async addFavorite(
+    @CurrentUser() user: JwtUser,
+    @Param('propertyId') propertyId: string,
   ) {
-    return this.favoritesService.add(
+    return await this.favoritesService.add(
       user.id,
       propertyId,
     );
   }
 
   @Get()
-  getMyFavorites(
-    @CurrentUser() user: any,
+  async getMyFavorites(
+    @CurrentUser() user: JwtUser,
   ) {
-    return this.favoritesService.getUserFavorites(
+    return await this.favoritesService.getUserFavorites(
       user.id,
     );
   }
 
-  @Delete(":propertyId")
-  removeFavorite(
-    @CurrentUser() user: any,
-    @Param("propertyId") propertyId: string,
+  @Delete(':propertyId')
+  async removeFavorite(
+    @CurrentUser() user: JwtUser,
+    @Param('propertyId') propertyId: string,
   ) {
-    return this.favoritesService.remove(
+    return await this.favoritesService.remove(
       user.id,
       propertyId,
     );

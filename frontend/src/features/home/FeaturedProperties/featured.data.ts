@@ -1,0 +1,32 @@
+export const featuredProperties = [
+    {
+      id: 1,
+      title: "Modern Apartment",
+      location: "Nakuru",
+      price: "KSh 25,000/mo",
+      bedrooms: 2,
+      bathrooms: 2,
+      image: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1200",
+      verified: true,
+    },
+    {
+      id: 2,
+      title: "Luxury Villa",
+      location: "Karen, Nairobi",
+      price: "KSh 120,000/mo",
+      bedrooms: 5,
+      bathrooms: 4,
+      image: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=1200",
+      verified: true,
+    },
+    {
+      id: 3,
+      title: "Cozy Bedsitter",
+      location: "Kisumu",
+      price: "KSh 9,500/mo",
+      bedrooms: 1,
+      bathrooms: 1,
+      image: "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=1200",
+      verified: false,
+    },
+  ];
