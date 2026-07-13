@@ -1,88 +1,59 @@
-import {
-  Injectable,
-  BadRequestException,
-} from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { randomUUID } from "crypto";
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { createClient } from '@supabase/supabase-js';
+import { Express } from 'express';
 
 @Injectable()
 export class SupabaseService {
-  private readonly supabase: SupabaseClient;
+  private supabase: any;
 
-  constructor(private readonly configService: ConfigService) {
-    this.supabase = createClient(
-      this.configService.get<string>("SUPABASE_URL")!,
-      this.configService.get<string>("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
+  constructor(private configService: ConfigService) {
+    const supabaseUrl = this.configService.get<string>('SUPABASE_URL');
+    const supabaseKey = this.configService.get<string>('SUPABASE_KEY');
+
+    this.supabase = createClient(supabaseUrl, supabaseKey);
   }
 
-  /**
-   * Upload a single image to Supabase Storage
-   */
-  async uploadImage(
-    file: Express.Multer.File,
-    folder = "properties",
-  ): Promise<string> {
-    if (!file) {
-      throw new BadRequestException("Image file is required.");
-    }
-
-    const extension = file.originalname.split(".").pop();
-    const filename = `${folder}/${randomUUID()}.${extension}`;
-
-    const { error } = await this.supabase.storage
-      .from("property-images")
-      .upload(filename, file.buffer, {
-        cacheControl: "3600",
-        contentType: file.mimetype,
-        upsert: false,
-      });
-
-    if (error) {
-      throw new BadRequestException(error.message);
-    }
-
-    const { data } = this.supabase.storage
-      .from("property-images")
-      .getPublicUrl(filename);
-
-    return data.publicUrl;
-  }
-
-  /**
-   * Upload multiple images
-   */
   async uploadImages(
     files: Express.Multer.File[],
-    folder = "properties",
+    folder: string,
   ): Promise<string[]> {
-    const urls: string[] = [];
+    const uploadedUrls: string[] = [];
 
     for (const file of files) {
-      const url = await this.uploadImage(file, folder);
-      urls.push(url);
+      const fileName = `${Date.now()}-${file.originalname}`;
+      const filePath = `${folder}/${fileName}`;
+
+      const { error } = await this.supabase.storage
+        .from('nyumbahub')
+        .upload(filePath, file.buffer, {
+          contentType: file.mimetype,
+        });
+
+      if (error) {
+        throw new Error(`Failed to upload image: ${error.message}`);
+      }
+
+      const { data } = this.supabase.storage
+        .from('nyumbahub')
+        .getPublicUrl(filePath);
+
+      uploadedUrls.push(data.publicUrl);
     }
 
-    return urls;
+    return uploadedUrls;
   }
 
-  /**
-   * Delete image from storage
-   */
   async deleteImage(imageUrl: string): Promise<void> {
-    const index = imageUrl.indexOf("/property-images/");
+    try {
+      const urlParts = imageUrl.split('/');
+      const filePath = urlParts.slice(-2).join('/');
 
-    if (index === -1) {
-      return;
+      await this.supabase.storage
+        .from('nyumbahub')
+        .remove([filePath]);
+    } catch (error) {
+      console.error('Failed to delete image:', error);
     }
-
-    const path = imageUrl.substring(
-      index + "/property-images/".length,
-    );
-
-    await this.supabase.storage
-      .from("property-images")
-      .remove([path]);
   }
 }

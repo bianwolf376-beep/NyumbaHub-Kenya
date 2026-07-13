@@ -1,58 +1,70 @@
 import {
-    IsBooleanString,
-    IsEnum,
-    IsNumberString,
-    IsOptional,
-    IsString,
-  } from "class-validator";
-  
-  import { PropertyType } from "@prisma/client";
-  
-  export class FilterPropertyDto {
-    @IsOptional()
-    @IsString()
-    county?: string;
-  
-    @IsOptional()
-    @IsString()
-    town?: string;
-  
-    @IsOptional()
-    @IsString()
-    estate?: string;
-  
-    @IsOptional()
-    @IsEnum(PropertyType)
-    propertyType?: PropertyType;
-  
-    @IsOptional()
-    @IsNumberString()
-    minRent?: string;
-  
-    @IsOptional()
-    @IsNumberString()
-    maxRent?: string;
-  
-    @IsOptional()
-    @IsBooleanString()
-    parking?: string;
-  
-    @IsOptional()
-    @IsBooleanString()
-    furnished?: string;
-  
-    @IsOptional()
-    @IsBooleanString()
-    wifi?: string;
-  
-    @IsOptional()
-    @IsBooleanString()
-    security?: string;
-    @IsOptional()
-    @IsNumberString()
-    bedrooms?: string;
-  
-    @IsOptional()
-    @IsNumberString()
-    bathrooms?: string;
-  }
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsBoolean,
+  IsEnum,
+} from 'class-validator';
+import { PropertyType } from '@prisma/client';
+
+export class FilterPropertyDto {
+  @IsString()
+  @IsOptional()
+  county?: string;
+
+  @IsString()
+  @IsOptional()
+  town?: string;
+
+  @IsString()
+  @IsOptional()
+  estate?: string;
+
+  @IsEnum(PropertyType)
+  @IsOptional()
+  propertyType?: PropertyType;
+
+  @IsNumber()
+  @IsOptional()
+  bedrooms?: number;
+
+  @IsNumber()
+  @IsOptional()
+  bathrooms?: number;
+
+  @IsNumber()
+  @IsOptional()
+  minRent?: number;
+
+  @IsNumber()
+  @IsOptional()
+  maxRent?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  parking?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  furnished?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  wifi?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  security?: boolean;
+
+  @IsString()
+  @IsOptional()
+  sortBy?: 'newest' | 'popular' | 'price-low' | 'price-high';
+
+  @IsNumber()
+  @IsOptional()
+  page?: number;
+
+  @IsNumber()
+  @IsOptional()
+  limit?: number;
+}
